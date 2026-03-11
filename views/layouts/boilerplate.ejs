@@ -25,7 +25,10 @@
     <%- include("../includes/navbar.ejs") %>
     <main class="content-wrap">
     <!-- for the body -->
-     <div class="container"><%- body %></div>
+     <div class="container">
+        <%- include("../includes/flash.ejs") %>
+        <%- body %>
+    </div>
     </main>
 
     <!-- for the footer -->

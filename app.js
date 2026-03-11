@@ -12,7 +12,8 @@ const reviews = require("./routes/review.js");
 const mongoose = require("mongoose");
 //to store session(in form of cookie)
 const session = require("express-session");
-
+//to flash messages after successful completeion of task
+const flash = require("connect-flash");
 main()
 .then(()=>{
     console.log("Connected to DB");
@@ -46,11 +47,21 @@ const sessionOptions = {
         httpOnly : true,
     },
 }
-app.use(session(sessionOptions));
 
-//root 
+//root route
 app.get("/",(req,res)=>{
     res.send("Root Working");
+});
+
+
+app.use(session(sessionOptions));
+//used flash before the routes so that it could implement functionalities
+app.use(flash());
+
+app.use((req,res,next)=>{
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
+    next();
 });
 
 //this is connected to the routes of listing.js through which functionalities work
