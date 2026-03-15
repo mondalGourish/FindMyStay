@@ -6,14 +6,20 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 //for router
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
+
 //connection to database
 const mongoose = require("mongoose");
 //to store session(in form of cookie)
 const session = require("express-session");
 //to flash messages after successful completeion of task
 const flash = require("connect-flash");
+//for authentication
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user.js");
 main()
 .then(()=>{
     console.log("Connected to DB");
@@ -58,17 +64,40 @@ app.use(session(sessionOptions));
 //used flash before the routes so that it could implement functionalities
 app.use(flash());
 
+//the session should be implemented earlier as when the user login and travels to different pages we should not ask the user to login for each traversal
+
+//initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
+//through passport and local strategy we use .authenticate function to authenticate the user
+passport.use(new LocalStrategy(User.authenticate()));
+// use static serialize(store) and deserialize(unstore) of model for passport session support
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+
 app.use((req,res,next)=>{
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
     next();
 });
 
+// app.get("/demoUser", async(req,res)=>{
+//     let fakeUser = new User({
+//         email:"student@gmail.com",
+//         username:"delta-student",
+//     });
+//     let registeredUser = await User.register(fakeUser,"helloworld");
+//     res.send(registeredUser);
+// })
+
 //this is connected to the routes of listing.js through which functionalities work
-app.use("/listings", listings);
+app.use("/listings", listingRouter);
 
 //this is connected to the routes of review.js through which functionalities work
-app.use("/listings/:id/reviews",reviews);
+app.use("/listings/:id/reviews",reviewRouter);
+//this is connected to user.js
+app.use("/",userRouter);
 
 
 //other the above routes, if request is sent to any other route this it is forwarded to this
