@@ -11,12 +11,14 @@ module.exports.renderNewForm = (req,res)=>{
 };
 //create
 module.exports.createListing = async(req,res,next)=>{
-    
+    let url = req.file.path;
+    let filename = req.file.filename;
     const newListing = new Listing(req.body.listing);
-    
+
     //the username of the user is shown who creates the listing
     newListing.owner = req.user._id;
-
+    //this is added directly to the cloudinary then to link to the database
+    newListing.image = {url,filename};
     await newListing.save();
     req.flash("success","New Listing Created!");
     res.redirect("/listings");
@@ -31,7 +33,9 @@ module.exports.editListing = async (req,res)=>{
         req.flash("error", "Listing does not exist");
         return res.redirect("/listings");
     }
-    res.render("listings/edit.ejs",{listing});
+    let originalImageUrl = listing.image.url;
+    originalImageUrl = originalImageUrl.replace("/upload", "/upload/h_300,w_250");
+    res.render("listings/edit.ejs",{listing,originalImageUrl});
 
 };
 //update 
@@ -48,13 +52,16 @@ module.exports.updateListing = async(req,res)=>{
     listing.location = updatedData.location;
     listing.country = updatedData.country;
 
-    // FIX: handle both string and object cases
-    listing.image = {
-        url: updatedData.image,
-        filename: listing.image?.filename || "default"
-    };
+    //  only update image if new file uploaded
+    if (req.file) {
+        let url = req.file.path;
+        let filename = req.file.filename;
+
+        listing.image = { url, filename };
+    }
 
     await listing.save();
+
     req.flash("success","Listing Updated!");
 
     res.redirect(`/listings/${id}`);
